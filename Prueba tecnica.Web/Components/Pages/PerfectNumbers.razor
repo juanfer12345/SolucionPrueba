@@ -1,0 +1,108 @@
+﻿@page "/perfect-numbers"
+@using Logica
+@rendermode InteractiveServer
+
+<h3>Números Perfectos</h3>
+
+<div class="mb-3">
+    <label for="inicio">Número de inicio:</label>
+    <input id="inicio" type="number" class="form-control" @bind="inicio" min="0" />
+</div>
+
+<div class="mb-3">
+    <label for="fin">Número final:</label>
+    <input id="fin" type="number" class="form-control" @bind="fin" min="0" />
+</div>
+
+<div class="mb-3">
+    <label for="metodo">Método de cálculo:</label>
+    <select class="form-select" @bind="metodoSeleccionado">
+        <option value="clasico">Clásico (iterativo)</option>
+        <option value="formula">Por fórmula (Mersenne)</option>
+    </select>
+</div>
+
+<button class="btn btn-primary" @onclick="Calcular" disabled="@isProcessing">Calcular</button>
+
+@if (isProcessing)
+{
+    <div class="mt-3 d-flex align-items-center">
+        <!-- Spinner Bootstrap -->
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Procesando...
+        <!-- Spinner CSS personalizado -->
+        <div class="spinner-css ms-3"></div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(mensajeError))
+{
+    <div class="alert alert-danger mt-3">@mensajeError</div>
+}
+
+@if (calculado && string.IsNullOrEmpty(mensajeError))
+{
+    <div class="mt-4">
+        @if (resultado.Count > 0)
+        {
+            <h5>Resultados:</h5>
+            <ul class="list-group">
+                @foreach (var num in resultado)
+                {
+                    <li class="list-group-item">@num</li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="text-warning">No se encontraron números perfectos en ese rango.</p>
+        }
+    </div>
+}
+
+@code {
+    private long inicio = 1;
+    private long fin = 1000;
+    private List<long> resultado = new();
+    private bool calculado = false;
+    private bool isProcessing = false;
+    private string? mensajeError;
+    private string metodoSeleccionado = "clasico"; // Valor por defecto
+
+    private async Task Calcular()
+    {
+        mensajeError = null;
+
+        // Validar valores no negativos y corregir
+        if (inicio < 0) inicio = 0;
+        if (fin < 0) fin = 0;
+
+        if (fin < inicio)
+        {
+            mensajeError = "El número final debe ser mayor o igual que el de inicio.";
+            resultado.Clear();
+            calculado = false;
+            return;
+        }
+
+        isProcessing = true;
+        calculado = false;
+
+        StateHasChanged(); // Fuerza refresco para mostrar spinner
+        await Task.Yield();
+
+        if (metodoSeleccionado == "clasico")
+        {
+            resultado = NumeroPerfecto.NumerosPerfectosEnRango(inicio, fin);
+        }
+        else
+        {
+            resultado = NumeroPerfecto.NumerosPerfectosEnRangoMersenne(inicio, fin);
+        }
+
+
+        calculado = true;
+        isProcessing = false;
+    }
+}
+
